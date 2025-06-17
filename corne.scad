@@ -61,6 +61,20 @@ outline = [
 ];
 
 difference() {
-linear_extrude(5) offset(r=2) polygon(points=outline);
-translate([0,0,2])  linear_extrude(100) polygon(points=outline);
+  linear_extrude(5) offset(r=2) polygon(points=outline);
+  translate([0, 0, 2]) linear_extrude(100) polygon(points=outline);
 }
+
+/* 
+# TODO
+- [ ] Add a cool cutout pattern to bottom tray
+- [ ] Add in the 4 posts locator PCB
+- [ ] Add in supports under posts
+- [ ] Test print a thin version of the bottom tray and test fit
+- [ ] Add in extra supports around the board edge
+    - A 2mm edge with gaps for the usb, trss and crystal, 1mm edge on left, no space around the sockets
+
+- [ ] Find out the thickness of switch plate
+- [ ] Proto part of the switch plate to test fit
+
+*/
