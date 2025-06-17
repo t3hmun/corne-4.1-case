@@ -67,9 +67,9 @@ edge = 1;
 tray_th = 1;
 wall_h = 2;
 
-
 module tray() {
-  offset(r=extra) polygon(points=outline);
+  // Delta causes sharp corners, r would round them, which is not a good fit for a pcb
+  offset(delta=extra) polygon(points=outline);
 }
 
 difference() {
@@ -141,7 +141,7 @@ module seigaiha_grid(r, h) {
 }
 
 module trayPattern() {
-  translate([0, 0, -5+tray_th]) intersection() {
+  translate([0, 0, -5 + tray_th]) intersection() {
       linear_extrude(5) tray();
       //cube(10,10,10);
       translate([60, 0, 0]) seigaiha_grid(15, height);
