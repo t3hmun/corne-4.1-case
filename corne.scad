@@ -60,9 +60,26 @@ outline = [
   [0, 0], // Bottom left corner working anti-clockwise /\
 ];
 
+// My board doesn't fit in the proper measurements, tolerances? This makes it a bit bigger all around.
+extra = 1;
+
+edge = 1;
+tray_th = 1;
+wall_h = 2;
+
+
+module tray() {
+  offset(r=extra) polygon(points=outline);
+}
+
 difference() {
-  linear_extrude(5) offset(r=2) polygon(points=outline);
-  translate([0, 0, 2]) linear_extrude(100) polygon(points=outline);
+  linear_extrude(wall_h) offset(r=edge + extra) polygon(points=outline);
+  difference() {
+    translate([0, 0, -0.01]) linear_extrude(100) tray();
+    trayPattern(); // Cut the tray pattern into to block that is being subtracted
+  }
+  translate([trx + edge + extra - 24, try + edge + extra - 15, tray_th]) cube([24.01, 15.01, wall_h - tray_th + 0.01]);
+  translate([trx + edge + extra - edge - 0.01, try - 45 - 15, tray_th]) cube([edge + 0.02, 15.01, wall_h - tray_th + 0.01]);
 }
 
 /* 
@@ -78,3 +95,55 @@ difference() {
 - [ ] Proto part of the switch plate to test fit
 
 */
+
+feat_smoothness = 18;
+feat_thick = 1.2;
+
+radius = 43 - 0.2; // total outer radius - a little bit so that it fits - these designs seem to expand a bit
+height = 5;
+
+module stencil(r, h) {
+  difference() {
+    cylinder(h=h, r=r, $fn=feat_smoothness);
+    translate([0, 0, -h]) difference() {
+        cylinder(h=h * 3, r=r - feat_thick, $fn=feat_smoothness);
+        translate([0, 0, -2 * h]) cylinder(h=h * 4, r=r / 4 * 3, $fn=feat_smoothness);
+      }
+    translate([0, 0, -h]) difference() {
+        cylinder(h=h * 3, r=r / 4 * 3 - feat_thick, $fn=feat_smoothness);
+        translate([0, 0, -2 * h]) cylinder(h=h * 4, r=r / 4 * 2, $fn=feat_smoothness);
+      }
+    translate([0, 0, -h]) difference() {
+        cylinder(h=h * 3, r=r / 4 * 2 - feat_thick, $fn=feat_smoothness);
+        translate([0, 0, -2 * h]) cylinder(h=h * 4, r=r / 4 * 1, $fn=feat_smoothness);
+      }
+    translate([0, 0, -h]) difference() {
+        cylinder(h=h * 3, r=r / 4 * 1 - feat_thick, $fn=feat_smoothness);
+        //translate([0,0,-2*h]) cylinder(h=h*4, r=r/4*1, $fn=feat_smoothness);
+      }
+    translate([r, -r / 2, -h]) cylinder(h=h * 3, r=r, $fn=feat_smoothness);
+    translate([-r, -r / 2, -h]) cylinder(h=h * 3, r=r, $fn=feat_smoothness);
+    translate([0, -r, -h]) cylinder(h=h * 3, r=r, $fn=feat_smoothness);
+  }
+}
+
+module seigaiha_grid(r, h) {
+  vrep = 10;
+  hrep = 10;
+  translate([-hrep / 2 * r, -vrep / 2 * r])for (row = [0:vrep]) {
+    translate([0, row * r, 0]) {
+      stencil(r, h);
+      for (col = [0:hrep]) {
+        translate([col * r, (col % 2) * (r / 2), 0]) stencil(r, h);
+      }
+    }
+  }
+}
+
+module trayPattern() {
+  translate([0, 0, -5+tray_th]) intersection() {
+      linear_extrude(5) tray();
+      //cube(10,10,10);
+      translate([60, 0, 0]) seigaiha_grid(15, height);
+    }
+}
