@@ -104,21 +104,25 @@ module tray() {
 
 difference() {
   linear_extrude(wall_h) offset(r=edge + extra) polygon(points=outline); // Make a large block, offset to make walls around the pcb 
-  // Cut out the space for excluding the space for the components
-  translate([0, 0, tray_th + comp_gap - 0.01]) linear_extrude(wall_h - tray_th - comp_gap + 0.02) tray();
-  // This is the component gap - the bits left are supports for the PCB
+  // Cut out the space inside
   intersection() {
-    // Before intersection this block leaves behind no supports - cuts out all the space for components
-    translate([0, 0, tray_th]) linear_extrude(comp_gap + 0.01) tray(); //polygon(points=outline);
-    union(){
+    translate([0, 0, tray_th - 0.01]) linear_extrude(wall_h - tray_th + 0.02) tray();
+
+    union() {
       translate([0, 0, 0.2]) linear_extrude(20) offset(delta=-2) tray();
-      translate([0,0,0]) cube([10,10,10]);
+      translate([-10, -50, tray_th + comp_gap]) cube([200, 200, 100]);
+      translate([55, -13, -10]) cube([20, 20, 100]);
+      translate([0, 10, -10]) cube([10, 5, 50]);
+      translate([0, 29, -10]) cube([10, 5, 50]);
+      translate([0, 48, -10]) cube([10, 5, 50]);
+      translate([trx - 20, try - 20, -10]) cube([100, 100, 50]);
+      translate([trx - 10, try - 40, -10]) cube([100, 10, 50]);
+      translate([trx - 10, try - 57, -10]) cube([100, 11, 50]);
     }
   }
-
   // Base pattern cutout
   difference() {
-    translate([0, 0, -0.01]) linear_extrude(tray_th + 0.02) tray();
+    translate([0, 0, -0.01]) linear_extrude(tray_th + 0.01) tray();
     trayPattern(tray_th); // Cut the tray pattern into to block that is being subtracted
   }
   //USB port cutout
