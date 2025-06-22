@@ -107,25 +107,22 @@ difference() {
   // Cut out the space for excluding the space for the components
   translate([0, 0, tray_th + comp_gap - 0.01]) linear_extrude(wall_h - tray_th - comp_gap + 0.02) tray();
   // This is the component gap - the bits left are supports for the PCB
-  // union() {
-  //   intersection() {
-  //     translate([0, 0, tray_th - 0.01]) linear_extrude(comp_gap + 0.01) offset(r=-1) polygon(points=outline);
-  //     translate([0,0,0]) cube([10, 10, 50]);
-  //   }
-  // }
-  union() {
-    difference() {
-      translate([0, 0, tray_th - 0.01]) linear_extrude(comp_gap + 0.01) offset(r=-2) polygon(points=outline);
-      translate([0,-11,0]) cube([200, 30, 50]);
+  intersection() {
+    // Before intersection this block leaves behind no supports - cuts out all the space for components
+    translate([0, 0, tray_th]) linear_extrude(comp_gap + 0.01) tray(); //polygon(points=outline);
+    union(){
+      translate([0, 0, 0.2]) linear_extrude(20) offset(delta=-2) tray();
+      translate([0,0,0]) cube([10,10,10]);
     }
   }
+
   // Base pattern cutout
   difference() {
-    translate([0, 0, -0.01]) linear_extrude(tray_th + 0.01) tray();
+    translate([0, 0, -0.01]) linear_extrude(tray_th + 0.02) tray();
     trayPattern(tray_th); // Cut the tray pattern into to block that is being subtracted
   }
   //USB port cutout
-  translate([trx - 15 + extra, try - 5, tray_th-0.01]) cube([15, 10 + 2, comp_gap + 0.2]);
+  translate([trx - 15 + extra, try - 5, tray_th - 0.01]) cube([15, 10 + 2, comp_gap + 0.2]);
   //TRSS port cutout
   translate([trx + edge + extra - edge - 0.01, try - 47 - 10, tray_th]) cube([edge + 0.02, 10, comp_gap + trss_top_th]);
 }
