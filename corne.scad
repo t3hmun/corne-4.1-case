@@ -17,12 +17,16 @@ comp_gap = 3;
 grid_th = 1.2;
 // The full height
 wall_h = tray_th + comp_gap + grid_th;
+// Minimum thickness of PCB
+pcb_th = 1.5;
 // Post radius, the posts that hold the PCB in place
 post_radius = (5 - 0.5) / 2;
 // Part of the post that the PCB rests on, has to be small enough not to hit any components
 post_rest_radius_extra = 0.8;
 // Post should stay under the surface of the PCB
-post_height = tray_th + comp_gap + 1.5;
+post_height = tray_th + comp_gap + pcb_th;
+// How much trss sticks out over the PCB
+trss_top_th = 1;
 
 //
 // VALUES DERIVED FROM DRAWING
@@ -100,17 +104,30 @@ module tray() {
 
 difference() {
   linear_extrude(wall_h) offset(r=edge + extra) polygon(points=outline); // Make a large block, offset to make walls around the pcb 
-  // Cut out the space for the pcb from the block above
-  translate([0, 0, tray_th - 0.01]) linear_extrude(wall_h - tray_th + 0.02) tray();
+  // Cut out the space for excluding the space for the components
+  translate([0, 0, tray_th + comp_gap - 0.01]) linear_extrude(wall_h - tray_th - comp_gap + 0.02) tray();
+  // This is the component gap - the bits left are supports for the PCB
+  // union() {
+  //   intersection() {
+  //     translate([0, 0, tray_th - 0.01]) linear_extrude(comp_gap + 0.01) offset(r=-1) polygon(points=outline);
+  //     translate([0,0,0]) cube([10, 10, 50]);
+  //   }
+  // }
+  union() {
+    difference() {
+      translate([0, 0, tray_th - 0.01]) linear_extrude(comp_gap + 0.01) offset(r=-2) polygon(points=outline);
+      translate([0,-11,0]) cube([200, 30, 50]);
+    }
+  }
   // Base pattern cutout
   difference() {
     translate([0, 0, -0.01]) linear_extrude(tray_th + 0.01) tray();
     trayPattern(tray_th); // Cut the tray pattern into to block that is being subtracted
   }
   //USB port cutout
-  translate([trx + edge + extra - 24, try + edge + extra - 15, tray_th]) cube([24.01, 15.01, wall_h - tray_th + 0.01]);
+  translate([trx - 15 + extra, try - 5, tray_th-0.01]) cube([15, 10 + 2, comp_gap + 0.2]);
   //TRSS port cutout
-  translate([trx + edge + extra - edge - 0.01, try - 45 - 15, tray_th]) cube([edge + 0.02, 15.01, wall_h - tray_th + 0.01]);
+  translate([trx + edge + extra - edge - 0.01, try - 47 - 10, tray_th]) cube([edge + 0.02, 10, comp_gap + trss_top_th]);
 }
 
 // Posts clockwise from bottom left
