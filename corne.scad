@@ -10,7 +10,7 @@ extra = 1;
 // Wall thickness
 edge = 1;
 // Height under the PCB 
-tray_th = 2;
+tray_th = 1;
 // Max height of components, PCB rest height
 comp_gap = 3;
 // Thickness of the grid the switches click into
@@ -115,7 +115,7 @@ difference() {
       translate([0, 10, -10]) cube([10, 5, 50]);
       translate([0, 29, -10]) cube([10, 5, 50]);
       translate([0, 48, -10]) cube([10, 5, 50]);
-      translate([trx - 20, try - 20, -10]) cube([100, 100, 50]);
+      translate([trx - 21, try - 20, -10]) cube([100, 100, 50]);
       translate([trx - 10, try - 40, -10]) cube([100, 10, 50]);
       translate([trx - 10, try - 57, -10]) cube([100, 11, 50]);
     }
@@ -171,7 +171,7 @@ post(px4, py4);
 // # Everything below is just patterns put into the base to make it use less filament and look nice
 //
 
-feat_smoothness = 32;
+feat_smoothness = 64;
 feat_thick = 1.2;
 
 module stencil(r, h) {
