@@ -1,4 +1,32 @@
 
+//
+// CONFIG VALUES
+//
+
+// Some of these are fudge value some might just be different for your board.
+
+// Extra inside space for the PCB. My board doesn't fit in the proper measurements, tolerances? This makes it a bit bigger all around.
+extra = 1;
+// Wall thickness
+edge = 1;
+// Height under the PCB 
+tray_th = 2;
+// Max height of components, PCB rest height
+comp_gap = 3;
+// Thickness of the grid the switches click into
+grid_th = 1.2;
+// The full height
+wall_h = tray_th + comp_gap + grid_th;
+// Post radius, the posts that hold the PCB in place
+post_radius = (5 - 0.5) / 2;
+// Part of the post that the PCB rests on, has to be small enough not to hit any components
+post_rest_radius_extra = 0.8;
+// Post should stay under the surface of the PCB
+post_height = tray_th + comp_gap + 1.5;
+
+//
+// VALUES DERIVED FROM DRAWING
+//
 
 // All the dimensions in https://github.com/foostan/crkbd/blob/main/README.md 
 // Actual image: https://github.com/foostan/crkbd/assets/736191/87ebea53-3c5c-42a1-97b3-f9292e4dacae
@@ -14,12 +42,16 @@ s6 = -s3; // Step after the fourth, fifth and sixth key
 
 a = 11.94; // Tilt for the bottom keys, same tilt twice
 
+//
+// PCB OUTLINE
+//
+
 // Calculated coorinates
 
 trx = 7 * k; // top right x
 try = 3 * k + s2 + s3 + s4 + s5 + s6; // top right y
 
-// The bottom coordinates after 0,0 anti-clockwise calculated off one another. 
+// The bottom coordinates after 0,0 (negative y) anti-clockwise calculated off one another. 
 
 bx1 = 3 * k;
 by1 = 0;
@@ -60,34 +92,55 @@ outline = [
   [0, 0], // Bottom left corner working anti-clockwise /\
 ];
 
-// My board doesn't fit in the proper measurements, tolerances? This makes it a bit bigger all around.
-extra = 1;
-
-edge = 1;
-tray_th = 1;
-wall_h = 2;
-
+// Tray is the pcb outline slightly expanded for tolerances, otherwise it doesn't fit.
 module tray() {
   // Delta causes sharp corners, r would round them, which is not a good fit for a pcb
   offset(delta=extra) polygon(points=outline);
 }
 
 difference() {
-  linear_extrude(wall_h) offset(r=edge + extra) polygon(points=outline);
+  linear_extrude(wall_h) offset(r=edge + extra) polygon(points=outline); // Make a large block, offset to make walls around the pcb 
+  // Cut out the space for the pcb from the block above
+  translate([0, 0, tray_th - 0.01]) linear_extrude(wall_h - tray_th + 0.02) tray();
+  // Base pattern cutout
   difference() {
-    translate([0, 0, -0.01]) linear_extrude(100) tray();
-    trayPattern(); // Cut the tray pattern into to block that is being subtracted
+    translate([0, 0, -0.01]) linear_extrude(tray_th + 0.01) tray();
+    trayPattern(tray_th); // Cut the tray pattern into to block that is being subtracted
   }
+  //USB port cutout
   translate([trx + edge + extra - 24, try + edge + extra - 15, tray_th]) cube([24.01, 15.01, wall_h - tray_th + 0.01]);
+  //TRSS port cutout
   translate([trx + edge + extra - edge - 0.01, try - 45 - 15, tray_th]) cube([edge + 0.02, 15.01, wall_h - tray_th + 0.01]);
 }
 
+// Posts clockwise from bottom left
+px1 = k;
+py1 = k;
+px2 = k;
+py2 = 2 * k;
+px3 = 5 * k;
+py3 = 2 * k + s2 + s3 + s4 + (s5 / 2);
+px4 = 5 * k;
+py4 = 0 + s2 + s3 + s4 + s5;
+
+module post(x, y) {
+  union() {
+    translate([x, y, 0]) cylinder(r=post_radius, h=post_height, $fn=feat_smoothness);
+    translate([x, y, 0]) cylinder(r=post_radius + post_rest_radius_extra, h=tray_th + comp_gap, $fn=feat_smoothness);
+  }
+}
+
+post(px1, py1);
+post(px2, py2);
+post(px3, py3);
+post(px4, py4);
+
 /* 
 # TODO
-- [ ] Add a cool cutout pattern to bottom tray
-- [ ] Add in the 4 posts locator PCB
-- [ ] Add in supports under posts
-- [ ] Test print a thin version of the bottom tray and test fit
+- [x] Add a cool cutout pattern to bottom tray
+- [x] Add in the 4 posts locator PCB
+- [x] Add in supports under posts
+- [x] Test print a thin version of the bottom tray and test fit - seems ok, made the mistake of using r intstead of delta, so the rounded inside corner get in the way.
 - [ ] Add in extra supports around the board edge
     - A 2mm edge with gaps for the usb, trss and crystal, 1mm edge on left, no space around the sockets
 
@@ -96,11 +149,12 @@ difference() {
 
 */
 
-feat_smoothness = 18;
-feat_thick = 1.2;
+//
+// # Everything below is just patterns put into the base to make it use less filament and look nice
+//
 
-radius = 43 - 0.2; // total outer radius - a little bit so that it fits - these designs seem to expand a bit
-height = 5;
+feat_smoothness = 32;
+feat_thick = 1.2;
 
 module stencil(r, h) {
   difference() {
@@ -128,8 +182,8 @@ module stencil(r, h) {
 }
 
 module seigaiha_grid(r, h) {
-  vrep = 10;
-  hrep = 10;
+  vrep = 15;
+  hrep = 15;
   translate([-hrep / 2 * r, -vrep / 2 * r])for (row = [0:vrep]) {
     translate([0, row * r, 0]) {
       stencil(r, h);
@@ -140,10 +194,11 @@ module seigaiha_grid(r, h) {
   }
 }
 
-module trayPattern() {
-  translate([0, 0, -5 + tray_th]) intersection() {
-      linear_extrude(5) tray();
+// This is meant to be cut out of cut out a tray shaped block (which is then cut out of the tray) so it is much bigger top and bottom
+module trayPattern(th) {
+  translate([0, 0, -1]) intersection() {
+      linear_extrude(th + 2) tray();
       //cube(10,10,10);
-      translate([60, 0, 0]) seigaiha_grid(15, height);
+      translate([60, 0, 0]) seigaiha_grid(10, th + 2);
     }
 }
